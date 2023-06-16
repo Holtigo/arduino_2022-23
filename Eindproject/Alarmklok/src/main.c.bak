@@ -1,0 +1,321 @@
+#define __DELAY_BACKWARD_COMPATIBLE__
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdio.h>
+#include <util/delay.h>
+
+#include "button.h"
+#include "buzzer.h"
+#include "display.h"
+#include "led.h"
+#include "potentiometer.h"
+#include "timer.h"
+#include "usart.h"
+
+#define TRUE 1
+#define FALSE 0
+#define MAXCOUNT 250
+
+typedef struct
+{
+    int hours;
+    int minutes;
+} KLOK;
+
+typedef struct
+{
+    int hours;
+    int minutes;
+} ALARM;
+
+uint8_t selectklokOrAlarm = 3;
+// FALSE = klok en TRUE = alarm
+uint8_t klokAlarmSet = FALSE;
+uint8_t alarmSet = FALSE;
+uint8_t klokSet = FALSE;
+uint8_t selectSetTime = 0;
+uint8_t alarmArmed = FALSE;
+uint8_t alarmOn = FALSE;
+uint8_t alarmEnd = FALSE;
+uint8_t counter = 0;
+uint8_t secondCounter = 55;
+uint8_t secondCounterInverse = 5;
+uint8_t minuteCounter = 0;
+uint8_t showCounter = FALSE;
+uint8_t stopSong = FALSE;
+ALARM alarm;
+KLOK klok;
+
+void setKlokHours(KLOK* klok) {
+    if (buttonPushed(0) == TRUE) {
+        klok->hours++;
+        if (klok->hours > 23) {
+            klok->hours = 0;
+        }
+        _delay_ms(100);
+    }
+    if (buttonPushed(2) == TRUE) {
+        klok->hours--;
+        if (klok->hours < 0) {
+            klok->hours = 23;
+        }
+        _delay_ms(100);
+    }
+}
+
+void setAlarmHours(ALARM* alarm) {
+    if (buttonPushed(0) == TRUE) {
+        alarm->hours++;
+        if (alarm->hours > 23) {
+            alarm->hours = 0;
+        }
+        _delay_ms(250);
+    }
+    if (buttonPushed(2) == TRUE) {
+        alarm->hours--;
+        if (alarm->hours < 0) {
+            alarm->hours = 23;
+        }
+        _delay_ms(250);
+    }
+}
+
+ISR(PCINT1_vect) {
+    if (buttonPushed(0) == TRUE) {
+        if (selectSetTime == 0 && klokAlarmSet == FALSE && alarmArmed == FALSE && alarmOn == FALSE && alarmEnd == FALSE) {
+            selectSetTime = 1;
+            _delay_ms(100);
+            printf("1\n");
+        } else if (selectSetTime == 1 && klokAlarmSet == FALSE && alarmArmed == FALSE && alarmOn == FALSE) {
+            selectSetTime = 2;
+            _delay_ms(100);
+            printf("2\n");
+        } else if (selectSetTime == 2 && klokAlarmSet == FALSE && alarmArmed == FALSE && alarmOn == FALSE && alarmEnd == FALSE) {
+            selectSetTime = 0;
+            _delay_ms(100);
+            printf("3\n");
+        } else if (alarmEnd == TRUE && alarmOn == FALSE && alarmArmed == FALSE && stopSong == FALSE) {
+            stopSong = TRUE;
+            printf("16\n");
+        }
+    }
+
+    if (buttonPushed(1) == TRUE) {
+        if (selectSetTime == 0 && klokSet == TRUE && alarmSet == TRUE && alarmOn == FALSE && alarmEnd == FALSE) {
+            alarmArmed = TRUE;
+            printf("4\n");
+        }
+        if (selectSetTime == 1 && selectklokOrAlarm == 3) {
+            selectklokOrAlarm = FALSE;
+            klokAlarmSet = TRUE;
+            printf("5\n");
+        } else if (selectSetTime == 2 && selectklokOrAlarm == 3) {
+            selectklokOrAlarm = TRUE;
+            klokAlarmSet = TRUE;
+            printf("6\n");
+        } else if (selectSetTime == 1 && selectklokOrAlarm == FALSE) {
+            selectSetTime = 1;
+            selectklokOrAlarm = 3;
+            klokAlarmSet = FALSE;
+            klokSet = TRUE;
+            printf("7\n");
+        } else if (selectSetTime == 2 && selectklokOrAlarm == TRUE) {
+            selectSetTime = 2;
+            selectklokOrAlarm = 3;
+            klokAlarmSet = FALSE;
+            alarmSet = TRUE;
+            printf("8\n");
+        } else if (alarmArmed == TRUE && alarmOn == TRUE && showCounter == FALSE) {
+            clearDisplay();
+            showCounter = TRUE;
+            _delay_ms(100);
+            printf("9\n");
+        } else if (alarmArmed == TRUE && alarmOn == TRUE && showCounter == TRUE) {
+            clearDisplay();
+            showCounter = FALSE;
+            _delay_ms(100);
+            printf("10\n");
+        } else if (alarmEnd == TRUE && alarmOn == FALSE && alarmArmed == FALSE && stopSong == FALSE) {
+            stopSong = TRUE;
+            printf("15\n");
+        }
+    }
+
+    if (buttonPushed(2) == 1) {
+        if (selectSetTime == 0 && klokAlarmSet == FALSE && alarmArmed == FALSE && alarmOn == FALSE && alarmEnd == FALSE) {
+            selectSetTime = 2;
+            printf("11\n");
+            _delay_ms(100);
+        } else if (selectSetTime == 1 && klokAlarmSet == FALSE && alarmArmed == FALSE && alarmOn == FALSE && alarmEnd == FALSE) {
+            selectSetTime = 0;
+            printf("12\n");
+            _delay_ms(100);
+        } else if (selectSetTime == 2 && klokAlarmSet == FALSE && alarmArmed == FALSE && alarmOn == FALSE) {
+            selectSetTime = 1;
+            printf("13\n");
+            _delay_ms(100);
+        } else if (alarmEnd == TRUE && alarmOn == FALSE && alarmArmed == FALSE && stopSong == FALSE) {
+            stopSong = TRUE;
+            printf("14\n");
+        }
+    }
+}
+
+ISR(TIMER2_COMPA_vect) {
+    if (alarmArmed == TRUE && alarmEnd == FALSE) {
+        if ((counter + 1) == MAXCOUNT) {
+            toggelLeds(15);
+            secondCounter++;
+            secondCounterInverse--;
+            counter = 0;
+        }
+        if (alarm.hours == 0 && alarm.minutes == 0 && secondCounter == 60) {
+            alarmEnd = TRUE;
+            alarmOn = FALSE;
+            alarmArmed = FALSE;
+        }
+        if (secondCounter == 60) {
+            secondCounter = 0;
+            secondCounterInverse = 59;
+            klok.minutes++;
+            if (klok.minutes > 59) {
+                klok.minutes = 0;
+                klok.hours++;
+                if (klok.hours > 23) {
+                    klok.hours = 0;
+                }
+            }
+            alarm.minutes--;
+            if (alarm.minutes < 0 && alarm.hours != 0) {
+                alarm.minutes = 59;
+                alarm.hours--;
+            }
+        }
+        counter++;
+    } else if (alarmEnd == TRUE && stopSong == FALSE) {
+        if ((counter + 1) == MAXCOUNT) {
+            secondCounter++;
+            secondCounterInverse--;
+            counter = 0;
+        }
+        counter++;
+        if (secondCounter == 10) {
+            stopSong = TRUE;
+        }
+    }
+}
+
+void printInstructions() {
+    // print introduction / instructions
+    printf("=========================================================\n");
+    printf("Welcome to the alarm clock!\n\n");
+    printf("Button 1 and 3 to cycle right and left respectively.\n");
+    printf("Button 2 to select item.\n");
+    printf("Button 1 and 3 to cycle up and down through hours.\n");
+    printf("Potentiometer to cycle through minutes.\n");
+    printf("Button 2 to confirm time.\n");
+    printf("If Clock and Alarm are set, return to 'MENU' and\n");
+    printf("press button 2 to arm the alarm.\n");
+    printf("Use button 2 to cycle through the clock and alarm.\n");
+    printf("When the alarm goes off, press any button to stop it.\n");
+    printf("=========================================================\n");
+}
+
+float notes[] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88};
+
+void alarmFinish() {
+    for (int i = 0; i < sizeof(notes) / sizeof(float); i++) {
+        playTone(notes[i], 350);
+        toggelLeds(15);
+    }
+}
+
+int main() {
+    // Initialize all modules
+    initUSART();
+    initTimer2(2, 1);
+    OCR2A = 249;
+    enableAllButtons();
+    enableAllButtonInterrupts();
+    enableAllLeds();
+    lightDownAllLeds();
+    enableBuzzer();
+    turnOffBuzzer();
+    initDisplay();
+    clearDisplay();
+    initADC1V1();
+    // Initialize variables
+
+    int number = 2834;
+    printf("number: %d\n", number);
+    writeNumberAndWait(number, 1000);
+    alarm.hours = 0;
+    alarm.minutes = 0;
+    klok.hours = 0;
+    klok.minutes = 0;
+    printf("loop\n");
+    printInstructions();
+    while (alarmOn == FALSE) {
+        if (selectSetTime == 0 && alarmArmed == FALSE && alarmOn == FALSE) {
+            writeStringAndWait("MENU", 25);
+        }
+        if (selectSetTime == 1 && selectklokOrAlarm == 3) {
+            writeStringAndWait("KLOK", 25);
+        }
+        if (selectSetTime == 2 && selectklokOrAlarm == 3) {
+            writeStringAndWait("ALAR", 25);
+        }
+        clearDisplay();
+        if (selectSetTime == 1 && selectklokOrAlarm == FALSE) {
+            write2NumbersLLED(klok.hours);
+            write2NumbersRLED(klok.minutes);
+            uint16_t potmeterValue = readPotmeterValue();
+            uint8_t minutes = potmeterValue / 17;
+            if (minutes > 59) {
+                minutes = 59;
+            }
+            klok.minutes = minutes;
+            setKlokHours(&klok);
+        }
+        if (selectSetTime == 2 && selectklokOrAlarm == TRUE) {
+            write2NumbersLLED(alarm.hours);
+            write2NumbersRLED(alarm.minutes);
+            uint16_t potmeterValue = readPotmeterValue();
+            uint8_t minutes = potmeterValue / 17;
+            if (minutes > 59) {
+                minutes = 59;
+            }
+            alarm.minutes = minutes;
+            setAlarmHours(&alarm);
+        }
+        if (selectSetTime == 0 && alarmArmed == TRUE && alarmOn == FALSE) {
+            writeStringAndWait("INIT", 25);
+            startTimer2(6);
+            alarmOn = TRUE;
+        }
+    }
+    printf("alarm on\n");
+    while (alarmEnd == FALSE) {
+        if (alarmArmed == TRUE && alarmOn == TRUE && showCounter == FALSE) {
+            // printf("klok: %d:%d:%d\n", klok.hours, klok.minutes, secondCounter);
+            printf("alarm: %d:%d:%d\n", alarm.hours, alarm.minutes, secondCounterInverse);
+            printf("alarmArmed: %d, alarmOn: %d, showCounter: %d\n", alarmArmed, alarmOn, showCounter);
+            // write2NumbersLLED(alarm.hours);
+            // write2NumbersRLED(alarm.minutes);
+        }
+        _delay_ms(500);
+        if (alarmArmed == TRUE && alarmOn == TRUE && showCounter == TRUE) {
+            printf("klok: %d:%d:%d\n", klok.hours, klok.minutes, secondCounter);
+            // printf("alarm: %d:%d:%d\n", alarm.hours, alarm.minutes, secondCounterInverse);
+            printf("alarmArmed: %d, alarmOn: %d, showCounter: %d\n", alarmArmed, alarmOn, showCounter);
+            // write2NumbersLLED(klok.hours);
+            // write2NumbersRLED(klok.minutes);
+        }
+        _delay_ms(500);
+    }
+    while (stopSong == FALSE) {
+        alarmFinish();
+    }
+    printf("alarm end\n");
+    return 0;
+}

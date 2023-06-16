@@ -1,0 +1,34 @@
+{
+	"folders": [
+		{
+			"path": "Potentiometer"
+		},
+		{
+			"name": "Using the display library",
+			"path": "Using the display library"
+		},
+		{
+			"name": "Geheugenmanagement",
+			"path": "Geheugenmanagement"
+		},
+		{
+			"path": "../oefeningen_week3/Alphabet on Display"
+		},
+		{
+			"path": "../oefeningen_week3/Potentiometer on display"
+		},
+		{
+			"path": "../oefeningen_week3/Scrolling numbers"
+		},
+		{
+			"name": "Nim",
+			"path": "../Weekproject 3/Nim"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"delay.h": "c",
+			"display.h": "c"
+		}
+	}
+}

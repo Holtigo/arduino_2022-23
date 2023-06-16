@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "Blinking Led"
+		},
+		{
+			"name": "LED Chaos",
+			"path": "LED Chaos"
+		},
+		{
+			"name": "Morse trainer",
+			"path": "../Weekproject 1/Morse trainer"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"io.h": "c"
+		}
+	}
+}

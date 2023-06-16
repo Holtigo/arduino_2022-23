@@ -1,0 +1,44 @@
+{
+	"folders": [
+		{
+			"path": "Write to serial"
+		},
+		{
+			"name": "Read Input from buttons",
+			"path": "Read Input from buttons"
+		},
+		{
+			"name": "Read input from buttons with macros",
+			"path": "Read input from buttons with macros"
+		},
+		{
+			"name": "Pointers",
+			"path": "Pointers"
+		},
+		{
+			"name": "Pointers demo",
+			"path": "Pointers demo"
+		},
+		{
+			"name": "Interrupts and buttons",
+			"path": "Interrupts and buttons"
+		},
+		{
+			"path": "../oefeningen_week2/LEDs en Buttons"
+		},
+		{
+			"path": "../oefeningen_week2/Timing en chronologie ISR"
+		},
+		{
+			"name": "Weekproject 2",
+			"path": "../Weekproject 2"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"delay.h": "c",
+			"io.h": "c",
+			"led.h": "c"
+		}
+	}
+}

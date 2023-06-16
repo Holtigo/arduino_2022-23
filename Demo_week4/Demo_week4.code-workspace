@@ -1,0 +1,30 @@
+{
+	"folders": [
+		{
+			"path": "Play Music"
+		},
+		{
+			"name": "Structures",
+			"path": "Structures"
+		},
+		{
+			"name": "Structures - dynamisch",
+			"path": "Structures - dynamisch"
+		},
+		{
+			"name": "Timers",
+			"path": "Timers"
+		},
+		{
+			"path": "../oefeningen_week4/Mijn synthesizer"
+		},
+		{
+			"path": "../oefeningen_week4/Stopwatch maken"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"interrupt.h": "c"
+		}
+	}
+}
